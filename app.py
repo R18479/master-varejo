@@ -22,7 +22,9 @@ def gerar_laudo_maquina():
                 Spacer(1, 40),
                 Paragraph("Documento gerado 100% via processamento de máquina Master Varejo Ecosystem.", estilo_r)
     ]
-    doc.build(story)  
+            doc.build(story)
+            
+ 
     buffer.seek(0)
     return buffer.getvalue()
 
