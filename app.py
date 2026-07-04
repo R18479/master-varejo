@@ -21,10 +21,10 @@ def gerar_laudo_maquina():
                 Paragraph(f"<i>{acao_direta}</i>", estilo_c),
                 Spacer(1, 40),
                 Paragraph("Documento gerado 100% via processamento de máquina Master Varejo Ecosystem.", estilo_r)
-            ]
-               doc.build(story)  
-               buffer.seek(0)
-               return buffer.getvalue()
+    ]
+    doc.build(story)  
+    buffer.seek(0)
+    return buffer.getvalue()
 
 pdf_data = gerar_laudo_maquina()
 
