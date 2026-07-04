@@ -1,5 +1,5 @@
 # 📄 LAUDO COMPARTILHÁVEL AUTOMÁTICO EM PDF (CORRIGIDO)
-        def gerar_laudo_maquina():
+def gerar_laudo_maquina():
             buffer = io.BytesIO()
             doc = SimpleDocTemplate(buffer, pagesize=letter)
             styles = getSampleStyleSheet()
