@@ -10,7 +10,7 @@ from reportlab.lib import colors
 # Configuração de Layout Mobile Avançado
 st.set_page_config(page_title="Master Varejo", layout="centered", initial_sidebar_state="collapsed")
 
-# Estilização CSS Premium: Interface Dinâmica, Realista e Focada em Cards
+# Estilização CSS Premium para o Branding do Cabeçalho
 st.markdown("""
     <style>
     body { background-color: #f4f7f6; }
@@ -28,55 +28,6 @@ st.markdown("""
     }
     .logo-main { font-size: 26px; font-weight: 900; letter-spacing: 2px; color: #00f5d4; font-family: 'Helvetica Neue', sans-serif; }
     .logo-sub { font-size: 11px; letter-spacing: 3px; color: #ffffff; opacity: 0.9; margin-top: 4px; font-weight: 600; }
-    
-    /* Grid das 8 Lojas Separadas */
-    .grid-lojas {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 8px;
-        margin-bottom: 15px;
-    }
-    .loja-card {
-        background-color: #ffffff;
-        padding: 10px;
-        border-radius: 8px;
-        border-left: 4px solid #1d70b8;
-        box-shadow: 0px 2px 5px rgba(0,0,0,0.04);
-        font-size: 12px;
-    }
-    .loja-card-critico {
-        background-color: #fff0f1;
-        padding: 10px;
-        border-radius: 8px;
-        border-left: 4px solid #d90429;
-        box-shadow: 0px 2px 5px rgba(217,4,41,0.08);
-        font-size: 12px;
-    }
-    .loja-nome { font-weight: bold; color: #021b2b; font-size: 13px; }
-    
-    /* Painel de KPI Corporativo */
-    .kpi-container {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 6px;
-        margin-bottom: 15px;
-    }
-    .kpi-box { background: white; padding: 8px; border-radius: 6px; text-align: center; box-shadow: 0px 1px 3px rgba(0,0,0,0.05); }
-    .kpi-num { font-size: 13px; font-weight: bold; color: #d90429; }
-    .kpi-lbl { font-size: 10px; color: #666; }
-    
-    /* Cartão de Insights Dinâmico */
-    .card-insight { 
-        background-color: #ffffff; 
-        padding: 16px; 
-        border-radius: 12px; 
-        box-shadow: 0px 3px 10px rgba(0,0,0,0.04); 
-        border-top: 5px solid #00f5d4; 
-        margin-top: 15px;
-        margin-bottom: 15px; 
-    }
-    .card-title { font-size: 15px; font-weight: bold; color: #021b2b; border-bottom: 1px solid #eeeeee; padding-bottom: 6px; }
-    .card-text { font-size: 13px; color: #333333; margin-top: 6px; line-height: 1.4; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -123,44 +74,31 @@ if arquivo_pdf is not None:
         
         # 📈 RENDERIZAÇÃO DOS ÍNDICES CORPORATIVOS (MÉDIAS REAIS DO GRUPO)
         st.write("### 📉 1. Índices Globais de Escape Encontrados")
-        st.markdown("""
-            <div class='kpi-container'>
-                <div class='kpi-box'><div class='kpi-num'>-1,49%</div><div class='kpi-lbl'>Média Quebra</div></div>
-                <div class='kpi-box'><div class='kpi-num'>-0,05%</div><div class='kpi-lbl'>Média Perda</div></div>
-                <div class='kpi-box'><div class='kpi-num' style='color:#053c5e;'>-1,55%</div><div class='kpi-lbl'>Escape TT</div></div>
-            </div>
-        """, unsafe_allow_html=True)
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Média Quebra", "-1,49%")
+        c2.metric("Média Perda", "-0,05%")
+        c3.metric("Escape TT", "-1,55%")
         
-        # 🏪 MAPEAMENTO SEPARADO DAS 8 LOJAS AUTOMÁTICO
+        # 🏪 MAPEAMENTO SEPARADO DAS 8 LOJAS AUTOMÁTICO (NATIVO STREAMLIT)
         st.write(f"### 🏪 2. Cobertura Detalhada por Filial: Seção {categoria_detectada.title()}")
-        html_grid = "<div class='grid-lojas'>"
-        for loja, giro_m in dados_lojas_finais.items():
+        colunas = st.columns(2)
+        for i, (loja, giro_m) in enumerate(dados_lojas_finais.items()):
             is_critico = giro_m > 45
-            classe_card = "loja-card-critico" if is_critico else "loja-card"
             status_tag = "🔴 Risco" if giro_m > 90 else ("🟡 Alerta" if is_critico else "🟢 OK")
-            html_grid += f"""
-                <div class='{classe_card}'>
-                    <div class='loja-nome'>🏢 {loja.title()}</div>
-                    <div style='margin-top:2px;'>Giro: <b>{giro_m} dias</b></div>
-                    <div style='font-size:10px; opacity:0.8;'>Status: {status_tag}</div>
-                </div>
-            """
-        html_grid += "</div>"
-        st.markdown(html_grid, unsafe_allow_html=True)
+            
+            with colunas[i % 2]:
+                conteudo_card = f"**🏢 {loja.title()}**\n\nGiro: {giro_m} dias\n\nStatus: {status_tag}"
+                if is_critico:
+                    st.error(conteudo_card)
+                else:
+                    st.success(conteudo_card)
         
         # 💡 DIRETRIZ E COMPONENTE DE PLANO DE AÇÃO DA MÁQUINA
+        st.write("### 💡 3. Diretriz e Plano de Ação")
         if pior_giro_geral > 90:
-            cor_card, acao_direta = "#d90429", f"🚨 **DIRETRIZ DE SEGURANÇA MÁXIMA:** Retenção crítica de capital detectada. Determinar ações de queima de margem, saldos ou transferências imediatas da filial {loja_gargalo_geral.title()} para mitigar perdas operacionais por validade."
+            st.error(f"🎯 **Diagnóstico AIA Avançado — Setor {categoria_detectada}**\n\n**Gargalo de Rede Identificado:** {pior_giro_geral} dias operacionais na unidade {loja_gargalo_geral.title()}.\n\n🚨 **DIRETRIZ DE SEGURANÇA MÁXIMA:** Retenção crítica de capital detectada. Determinar ações de queima de margem, saldos ou transferências imediatas da filial {loja_gargalo_geral.title()} para mitigar perdas operacionais por validade.")
         else:
-            cor_card, acao_direta = "#ffb703", f"⚠️ **DIRETRIZ PREVENTIVA:** Nível acima do prudencial de cobertura. Recomenda-se o congelamento temporário de novos pedidos de compra para a loja {loja_gargalo_geral.title()}."
-            
-        st.markdown(f"""
-            <div class='card-insight' style='border-top-color: {cor_card};'>
-                <div class='card-title'>🎯 Diagnóstico AIA Avançado — Setor {categoria_detectada}</div>
-                <p class='card-text'><b>Gargalo de Rede Identificado:</b> {pior_giro_geral} dias operacionais na unidade {loja_gargalo_geral.title()}.</p>
-                <p class='card-text'>{acao_direta}</p>
-            </div>
-        """, unsafe_allow_html=True)
+            st.warning(f"🎯 **Diagnóstico AIA Avançado — Setor {categoria_detectada}**\n\n**Gargalo de Rede Identificado:** {pior_giro_geral} dias operacionais na unidade {loja_gargalo_geral.title()}.\n\n⚠️ **DIRETRIZ PREVENTIVA:** Nível acima do prudencial de cobertura. Recomenda-se o congelamento temporário de novos pedidos de compra para a loja {loja_gargalo_geral.title()}.")
         
         # 📄 LAUDO COMPARTILHÁVEL AUTOMÁTICO EM PDF
         def gerar_laudo_maquina():
@@ -179,7 +117,6 @@ if arquivo_pdf is not None:
                 Paragraph(f"<b>Ponto Crítico de Redução de Perdas:</b> {pior_giro_geral} dias na filial {loja_gargalo_geral.title()}", estilo_c),
                 Spacer(1, 10),
                 Paragraph(f"<b>Plano de Ação Corretiva Gerado pela Máquina:</b>", estilo_c),
-                Paragraph(f"<i>{acao_direta}</i>", estilo_c),
                 Spacer(1, 40),
                 Paragraph("<font size=8 color='#888888'>Documento gerado 100% via processamento de máquina Master Varejo Ecosystem.</font>", alignment=1)
             ]
@@ -194,7 +131,7 @@ if arquivo_pdf is not None:
             mime="application/pdf"
         )
         
-    except Exception:
-        st.error("Erro no processamento do documento. Certifique-se de carregar um relatório padrão.")
+    except Exception as e:
+        st.error(f"Erro no processamento do documento: {e}")
 else:
     st.info("Aguardando upload do PDF para ativar o motor de auditoria e exibir as 8 lojas...")
