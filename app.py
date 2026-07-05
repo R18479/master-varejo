@@ -9,7 +9,7 @@ def gerar_laudo_maquina():
             estilo_s = ParagraphStyle('S', fontName='Helvetica-Bold', fontSize=11, textColor=colors.HexColor('#666666'), spaceAfter=20, alignment=1)
             estilo_c = ParagraphStyle('C', fontName='Helvetica', fontSize=11, leading=16, spaceAfter=8)
             estilo_r = ParagraphStyle('R', fontName='Helvetica', fontSize=8, textColor=colors.HexColor('#888888'), alignment=1)
-          story = [
+            story = [
         Paragraph("🔺 MASTER VAREJO", estilo_t),
         Paragraph("LAUDO AUTOMÁTICO DE AUDITORIA DE REDE", estilo_s),
         Spacer(1, 15),
