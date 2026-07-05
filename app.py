@@ -15,7 +15,6 @@ def gerar_laudo_maquina(loja, categoria, giro, valor, plano_acao):
     corpo = ParagraphStyle("Corpo", parent=styles["Normal"], fontSize=11, leading=18)
     rodape = ParagraphStyle("Rodape", parent=styles["Normal"], fontSize=8, alignment=1, textColor=colors.grey)
 
-    # Corrige formatação de valor e quebras de linha
     try:
         valor_formatado = f"R$ {float(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     except Exception:
@@ -42,7 +41,6 @@ def gerar_laudo_maquina(loja, categoria, giro, valor, plano_acao):
     buffer.seek(0)
     return buffer.getvalue()
 
-# Interface Streamlit
 st.set_page_config(page_title="Master Varejo - Laudo", page_icon="🔺")
 st.title("🔺 MASTER VAREJO")
 st.subheader("Gerador de Laudo Automático de Auditoria")
@@ -54,7 +52,7 @@ valor = st.number_input("Capital Imobilizado (R$)", min_value=0.0, format="%.2f"
 plano_acao = st.text_area("Plano de Ação Recomendado", height=150)
 
 if st.button("Gerar PDF", type="primary"):
-    if loja and categoria and giro and valor:
+    if loja.strip() and categoria.strip() and giro.strip() and valor > 0:
         pdf_bytes = gerar_laudo_maquina(loja, categoria, giro, valor, plano_acao)
         st.download_button(
             label="📄 Baixar Laudo PDF",
@@ -64,4 +62,4 @@ if st.button("Gerar PDF", type="primary"):
         )
         st.success("Laudo gerado com sucesso!")
     else:
-        st.error("Preencha todos os campos obrigatórios
+        st.error("Preencha todos os campos obrigatórios corretamente.")
