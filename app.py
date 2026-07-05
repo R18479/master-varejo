@@ -1,25 +1,31 @@
-import streamlit as st
-import pandas as pd
+import io
 import re
+import pandas as pd
+import streamlit as st
 from PIL import Image
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 
+# Configuração da página
 st.set_page_config(
     page_title="Master Varejo — Powered by AIA",
+    page_icon="🔼",
     layout="centered",
-    initial_sidebar_state="collapsed",
-    page_icon="🔼"
+    initial_sidebar_state="collapsed"
 )
 
-# Função para carregar a logo localmente
+# Função para carregar a logo
 def carregar_logo():
     try:
         return Image.open("logo_master_varejo.png")
-    except Exception:
+    except:
         return None
 
 logo_img = carregar_logo()
 
-# CSS para cabeçalho fixo escuro e layout limpo mobile
+# CSS Customizado
 st.markdown("""
 <style>
 .header {
@@ -59,7 +65,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Cabeçalho fixo com logo e textos
+# Cabeçalho fixo com logo e texto
 with st.container():
     st.markdown('<div class="header">', unsafe_allow_html=True)
     if logo_img:
@@ -74,62 +80,65 @@ with st.container():
 
 st.markdown('<div class="main-content">', unsafe_allow_html=True)
 
-dados_dashboard = st.text_area(
-    "Cole o texto completo do dashboard (ex: Categoria com X dias em Loja (R$ Valor))",
-    height=180,
-    max_chars=20000,
-    placeholder="Exemplo:\nBAZAR com 205 dias em João Dias (R$ 433.521)\nLIMPEZA com 91 dias em São José (R$ 1.401.360)\nPEIXARIA com 117 dias em João Dias (R$ 43.769)\n..."
-)
+# Entrada de dados pelo usuário
+loja = st.text_input("Loja")
+categoria = st.text_input("Categoria")
+giro = st.number_input("Dias de Giro", min_value=0, step=1)
+valor = st.number_input("Capital Imobilizado (R$)", min_value=0.0, format="%.2f")
+plano_acao = st.text_area("Plano de Ação Recomendado", height=150)
 
-def parse_dashboard(texto: str):
-    import pandas as pd
-    dados = []
-    regex = re.compile(
-        r"(?P<categoria>[A-Za-zÀ-ú\s]+?)\s+com\s+(?P<dias>\d+)\s+dias\s+em\s+(?P<loja>[A-Za-zÀ-ú\s]+)\s*\(R\$?\s*(?P<valor>[\d\.\,]+)\)",
-        re.IGNORECASE
-    )
-    for linha in texto.strip().split("\n"):
-        m = regex.search(linha.strip())
-        if m:
-            categoria = m.group("categoria").strip().upper()
-            loja = m.group("loja").strip().upper()
-            dias = int(m.group("dias"))
-            valor_str = m.group("valor").replace(".", "").replace(",", ".")
-            valor = float(valor_str)
-            dados.append({
-                "Loja": loja,
-                "Categoria": categoria,
-                "DiasGiro": dias,
-                "ValorFinanceiro": valor
-            })
-    df = pd.DataFrame(dados)
-    return df if not df.empty else None
+# Função para gerar PDF com ReportLab
+def gerar_laudo_maquina(loja, categoria, giro, valor, plano_acao):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
 
-if dados_dashboard.strip():
-    with st.spinner("Processando dados..."):
-        df = parse_dashboard(dados_dashboard)
-else:
-    df = None
+    styles = getSampleStyleSheet()
+    titulo = ParagraphStyle("Titulo", parent=styles["Heading1"], fontName="Helvetica-Bold",
+                            fontSize=20, alignment=1, textColor=colors.HexColor("#053c5e"), spaceAfter=12)
+    subtitulo = ParagraphStyle("Subtitulo", parent=styles["Normal"], fontName="Helvetica-Bold",
+                              fontSize=11, alignment=1, textColor=colors.HexColor("#666666"), spaceAfter=20)
+    corpo = ParagraphStyle("Corpo", parent=styles["Normal"], fontSize=11, leading=18)
+    rodape = ParagraphStyle("Rodape", parent=styles["Normal"], fontSize=8, alignment=1,
+                           textColor=colors.grey)
 
-if df is None:
-    st.warning("Cole dados válidos do dashboard para análise.")
-    st.markdown("</div>", unsafe_allow_html=True)
-    st.stop()
+    try:
+        valor_formatado = f"R$ {float(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    except Exception:
+        valor_formatado = f"R$ {valor}"
 
-lojas = sorted(df["Loja"].unique())
-loja_escolhida = st.selectbox("Selecione a loja para visualizar dados", lojas)
+    plano_acao_texto = plano_acao or ""
 
-if loja_escolhida:
-    df_loja = df[df["Loja"] == loja_escolhida]
-    st.markdown(f"### Dados para a loja **{loja_escolhida.title()}**")
-    for _, row in df_loja.iterrows():
-        valor_fmt = f"R$ {row['ValorFinanceiro']:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-        st.markdown(f"""
-        <div class="category-card">
-            <strong>Categoria:</strong> {row['Categoria'].title()}<br>
-            <strong>Dias de Giro:</strong> {row['DiasGiro']} dias<br>
-            <strong>Valor Financeiro:</strong> {valor_fmt}
-        </div>
-        """, unsafe_allow_html=True)
+    story = [
+        Paragraph("🔺 MASTER VAREJO", titulo),
+        Paragraph("LAUDO AUTOMÁTICO DE AUDITORIA", subtitulo),
+        Spacer(1, 20),
+        Paragraph(f"<b>Loja:</b> {loja}", corpo),
+        Paragraph(f"<b>Categoria:</b> {categoria}", corpo),
+        Paragraph(f"<b>Dias de Giro:</b> {giro}", corpo),
+        Paragraph(f"<b>Capital Imobilizado:</b> {valor_formatado}", corpo),
+        Spacer(1, 15),
+        Paragraph("<b>Plano de Ação Recomendado</b>", corpo),
+        Paragraph(plano_acao_texto.replace('\n', '<br />'), corpo),
+        Spacer(1, 30),
+        Paragraph("Documento gerado automaticamente pelo AIA.", rodape),
+    ]
 
-st.markdown("</div>", unsafe_allow_html=True)
+    doc.build(story)
+    buffer.seek(0)
+    return buffer.getvalue()
+
+# Botão para gerar e baixar PDF
+if st.button("Gerar PDF", type="primary"):
+    if loja.strip() and categoria.strip() and giro > 0 and valor > 0:
+        pdf_bytes = gerar_laudo_maquina(loja, categoria, giro, valor, plano_acao)
+        st.download_button(
+            label="📄 Baixar Laudo PDF",
+            data=pdf_bytes,
+            file_name=f"laudo_{loja.replace(' ', '_')}.pdf",
+            mime="application/pdf"
+        )
+        st.success("Laudo gerado com sucesso!")
+    else:
+        st.error("Preencha todos os campos obrigatórios corretamente.")
+
+st.markdown('</div>', unsafe_allow_html=True)
