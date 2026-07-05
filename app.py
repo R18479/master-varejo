@@ -1,98 +1,95 @@
-# 📄 LAUDO COMPARTILHÁVEL AUTOMÁTICO EM PDF
+import io
 
-def gerar_laudo_maquina():
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+)
+
+def gerar_laudo_maquina(loja, categoria, giro, valor, plano_acao):
     buffer = io.BytesIO()
 
     doc = SimpleDocTemplate(
         buffer,
-        pagesize=letter
+        pagesize=letter,
+        rightMargin=40,
+        leftMargin=40,
+        topMargin=40,
+        bottomMargin=40
     )
 
     styles = getSampleStyleSheet()
 
-    estilo_t = ParagraphStyle(
-        "T",
+    titulo = ParagraphStyle(
+        "Titulo",
         parent=styles["Heading1"],
         fontName="Helvetica-Bold",
-        fontSize=22,
+        fontSize=20,
+        alignment=1,
         textColor=colors.HexColor("#053c5e"),
         spaceAfter=12,
-        alignment=1
     )
 
-    estilo_s = ParagraphStyle(
-        "S",
+    subtitulo = ParagraphStyle(
+        "Subtitulo",
         parent=styles["Normal"],
         fontName="Helvetica-Bold",
         fontSize=11,
+        alignment=1,
         textColor=colors.HexColor("#666666"),
         spaceAfter=20,
-        alignment=1
     )
 
-    estilo_c = ParagraphStyle(
-        "C",
+    corpo = ParagraphStyle(
+        "Corpo",
         parent=styles["Normal"],
-        fontName="Helvetica",
         fontSize=11,
-        leading=16,
-        spaceAfter=8
+        leading=18,
     )
 
-    estilo_r = ParagraphStyle(
-        "R",
+    rodape = ParagraphStyle(
+        "Rodape",
         parent=styles["Normal"],
-        fontName="Helvetica",
         fontSize=8,
-        textColor=colors.HexColor("#888888"),
-        alignment=1
+        alignment=1,
+        textColor=colors.grey,
+    )
+
+    valor_formatado = (
+        f"R$ {valor:,.2f}"
+        .replace(",", "X")
+        .replace(".", ",")
+        .replace("X", ".")
     )
 
     story = [
-        Paragraph("🔺 MASTER VAREJO", estilo_t),
-        Paragraph("LAUDO AUTOMÁTICO DE AUDITORIA DE REDE", estilo_s),
+        Paragraph("🔺 MASTER VAREJO", titulo),
+        Paragraph("LAUDO AUTOMÁTICO DE AUDITORIA", subtitulo),
+
+        Spacer(1, 20),
+
+        Paragraph(f"<b>Loja:</b> {loja}", corpo),
+        Paragraph(f"<b>Categoria:</b> {categoria}", corpo),
+        Paragraph(f"<b>Dias de Giro:</b> {giro}", corpo),
+        Paragraph(f"<b>Capital Imobilizado:</b> {valor_formatado}", corpo),
+
         Spacer(1, 15),
 
-        Paragraph(
-            f"<b>Setor Mapeado por Varredura:</b> {categoria_detectada}",
-            estilo_c,
-        ),
+        Paragraph("<b>Plano de Ação Recomendado</b>", corpo),
+        Paragraph(plano_acao, corpo),
+
+        Spacer(1, 30),
 
         Paragraph(
-            f"<b>Ponto Crítico de Redução de Perdas:</b> {foco_geral}",
-            estilo_c,
-        ),
-
-        Spacer(1, 10),
-
-        Paragraph(
-            "<b>Plano de Ação Corretiva Gerado pela Máquina:</b>",
-            estilo_c,
-        ),
-
-        Paragraph(
-            f"<i>{acao_direta}</i>",
-            estilo_c,
-        ),
-
-        Spacer(1, 40),
-
-        Paragraph(
-            "Documento gerado 100% via processamento de máquina.",
-            estilo_r,
+            "Documento gerado automaticamente pelo AIA.",
+            rodape,
         ),
     ]
 
     doc.build(story)
+
     buffer.seek(0)
     return buffer.getvalue()
-
-
-pdf_data = gerar_laudo_maquina()
-
-st.download_button(
-    label="📥 Baixar Laudo Oficial em PDF",
-    data=pdf_data,
-    file_name=f"Laudo_Automatico_{categoria_detectada}.pdf",
-    mime="application/pdf",
-)
